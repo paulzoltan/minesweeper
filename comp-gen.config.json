@@ -1,0 +1,6 @@
+{
+  "typescript": true,
+  "css": true,
+  "preprocessor": "css",
+  "path": "src/components"
+}

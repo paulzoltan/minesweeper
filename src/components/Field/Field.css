@@ -1,0 +1,80 @@
+body {
+  font-size: 1.5em;
+}
+.field {
+  margin: 2em;
+  display: grid;
+  grid-template: repeat(20, 1.5em) / repeat(20, 1.5em);
+  border: 1px solid rgb(190, 190, 190);
+  width: fit-content;
+}
+
+.cell {
+  border: 1px solid rgb(190, 190, 190);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.cell--hidden {
+  color: #fff0;
+}
+
+/* Empty cell */
+.cell-color-0 {
+  background-color: #e0e0e0; /* Light gray */
+  color: #e0e0e0; /* Black */
+}
+
+/* Cells with 1 mine neighbor */
+.cell-color-1 {
+  background-color: #f2f2f2; /* Lighter gray */
+  color: #007acc; /* Blue */
+}
+
+/* Cells with 2 mine neighbors */
+.cell-color-2 {
+  background-color: #f2f2f2; /* Lighter gray */
+  color: #008000; /* Green */
+}
+
+/* Cells with 3 mine neighbors */
+.cell-color-3 {
+  background-color: #f2f2f2; /* Lighter gray */
+  color: #ff0000; /* Red */
+}
+
+/* Cells with 4 mine neighbors */
+.cell-color-4 {
+  background-color: #f2f2f2; /* Lighter gray */
+  color: #000080; /* Navy */
+}
+
+/* Cells with 5 mine neighbors */
+.cell-color-5 {
+  background-color: #f2f2f2; /* Lighter gray */
+  color: #800000; /* Maroon */
+}
+
+/* Cells with 6 mine neighbors */
+.cell-color-6 {
+  background-color: #f2f2f2; /* Lighter gray */
+  color: #008080; /* Teal */
+}
+
+/* Cells with 7 mine neighbors */
+.cell-color-7 {
+  background-color: #f2f2f2; /* Lighter gray */
+  color: #000; /* Black */
+}
+
+/* Cells with 8 or more mine neighbors */
+.cell-color-8 {
+  background-color: #f2f2f2; /* Lighter gray */
+  color: #808080; /* Gray */
+}
+
+.cell--marked {
+  color: black;
+}
