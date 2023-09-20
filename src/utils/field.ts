@@ -46,18 +46,8 @@ export function createField(size: number, mineNum: number) {
     }
   }
 
-  // Increase every element in the matrix by 10.
-  function hideMines() {
-    for (let i = 0; i < size; i++) {
-      for (let j = 0; j < size; j++) {
-        field[i][j] += 10
-      }
-    }
-  }
-
   const field = createMatrix()
   fillField()
   markFields()
-  hideMines()
   return field
 }

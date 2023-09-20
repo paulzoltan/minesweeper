@@ -1,111 +1,141 @@
 import { useState } from 'react'
 import { createField } from '../utils/field'
+import { uniquePush } from '../utils/misc'
 
 const SIZE = 20
-const MINE_NUM = 40
+const MINE_NUM = 60
 
-declare global {
-  interface Array<T> {
-    uniquePush(element: T): void
-  }
-}
-// eslint-disable-next-line no-extend-native
-Array.prototype.uniquePush = function <T>(element: T): void {
-  // Check if the element is not already in the array
-  if (!this.some((item) => isEqual(item, element))) {
-    this.push(element)
-  }
-}
-
-// Helper function to check deep equality for non-primitive elements
-function isEqual(a: any, b: any): boolean {
-  // Use a deep equality check (you can use a library like Lodash for a more robust comparison)
-  return JSON.stringify(a) === JSON.stringify(b)
-}
+const perception = createField(SIZE, MINE_NUM)
 
 export function useField() {
-  const [field, setField] = useState(createField(SIZE, MINE_NUM))
+  const [intelligence, setIntelligence] = useState<IntelligenceT[][]>(
+    Array(SIZE)
+      .fill(null)
+      .map(() => Array(SIZE).fill('hidden'))
+  )
+  // Helper
+  function setInt(
+    fun: (i: number, j: number, val: IntelligenceT) => IntelligenceT
+  ) {
+    setIntelligence((int) =>
+      int.map((row, i) => row.map((val, j) => fun(i, j, val)))
+    )
+  }
+
+  // Helper
+  function setIntItem(x: number, y: number, newVal: IntelligenceT) {
+    setIntelligence((int) =>
+      int.map((row, i) =>
+        row.map((originalVal, j) => (x === i && y === j ? newVal : originalVal))
+      )
+    )
+  }
+
+  // Helper
+  function iterateNeighbors(
+    x: number,
+    y: number,
+    fun: (i: number, j: number) => void
+  ) {
+    for (
+      let i = Math.max(0, x - 1);
+      i <= Math.min(perception.length - 1, x + 1);
+      i++
+    ) {
+      for (
+        let j = Math.max(0, y - 1);
+        j <= Math.min(perception.length - 1, y + 1);
+        j++
+      ) {
+        fun(i, j)
+      }
+    }
+  }
 
   function reveal(x: number, y: number) {
-    const val = field[x][y]
+    const val = perception[x][y]
 
-    // if it is already revealed
-    if (val < 10 || val >= 100) {
+    // if it is already revealed, do nothing
+    if (intelligence[x][y] === 'revealed') {
       return
     }
 
-    const blanks: number[][] = []
+    // 'clearCluster' represents a collection of adjacent cells
+    // that are free of mines and have no neighboring cells with mines.
+    const clearCluster: number[][] = []
 
-    if (val === 10) {
-      blanks.push([x, y])
+    if (val === 0) {
+      clearCluster.push([x, y])
     }
 
-    let current = 0
+    let currentTotal = 0
 
     cascade()
 
-    // each value of the `field` listed in the `blanks` array and their neighbors decreased by 10 (if they are bigger than 10)
-    setField((f) =>
-      f.map((row, i) =>
-        row.map((val, j) =>
-          (blanks.find(
-            (e) => Math.abs(e[0] - i) <= 1 && Math.abs(e[1] - j) <= 1
-          ) !== undefined ||
-            (x === i && y === j)) &&
-          val >= 10
-            ? val - 10
-            : val
-        )
-      )
+    setInt((i, j, val) =>
+      clearCluster.find(
+        (e) => Math.abs(e[0] - i) <= 1 && Math.abs(e[1] - j) <= 1
+      ) !== undefined ||
+      (x === i && y === j)
+        ? 'revealed'
+        : val
     )
-
+    // recursive expansion of 'clearCluster'
     function cascade() {
-      if (blanks.length <= current) {
+      if (clearCluster.length <= currentTotal) {
         return
       }
 
-      const [x, y] = blanks[current]
+      const [x, y] = clearCluster[currentTotal]
 
       iterateNeighbors(x, y, (i, j) => {
-        if (field[i][j] === 10) {
-          blanks.uniquePush([i, j])
+        if (perception[i][j] === 0) {
+          uniquePush(clearCluster, [i, j])
         }
       })
 
-      current++
+      currentTotal++
       cascade()
     }
-    function iterateNeighbors(
-      x: number,
-      y: number,
-      fun: (i: number, j: number) => void
-    ) {
-      for (
-        let i = Math.max(0, x - 1);
-        i <= Math.min(field.length - 1, x + 1);
-        i++
-      ) {
-        for (
-          let j = Math.max(0, y - 1);
-          j <= Math.min(field.length - 1, y + 1);
-          j++
-        ) {
-          fun(i, j)
-        }
-      }
+  }
+
+  function revealNeighbors(x: number, y: number) {
+    if (intelligence[x][y] !== 'revealed') {
+      return
     }
+    let markedCount = 0
+
+    iterateNeighbors(x, y, (i, j) => {
+      if (intelligence[i][j] === 'marked') {
+        markedCount++
+      }
+    })
+
+    if (markedCount !== perception[x][y]) {
+      return
+    }
+
+    iterateNeighbors(x, y, (i, j) => {
+      if (intelligence[i][j] === 'hidden') {
+        reveal(i, j)
+      }
+    })
   }
 
   function mark(x: number, y: number) {
-    console.log('right click')
-    const val = field[x][y]
-    const newVal = val < 100 ? val + 100 : val - 100
-    setField((f) =>
-      f.map((row, i) =>
-        row.map((val, j) => (x === i && y === j ? newVal : val))
-      )
-    )
+    const int = intelligence[x][y]
+    const valids = ['hidden', 'marked']
+    if (valids.includes(int)) {
+      const newInt = int === 'hidden' ? 'marked' : 'hidden'
+      setIntItem(x, y, newInt)
+    }
   }
 
-  return { field, reveal, mark }
+  return {
+    perception,
+    intelligence,
+    reveal,
+    revealNeighbors,
+    mark,
+  }
 }
